@@ -1,0 +1,50 @@
+name: Release
+
+# Push a tag like v0.2.0 to build a universal (Apple silicon + Intel) macOS app and attach it
+# to a draft GitHub release. Signs + notarizes when the Apple secrets are set, otherwise builds unsigned.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Load Apple signing secrets
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          # Empty vars would make the bundler try (and fail) to sign, so only export what's configured.
+          if [ -z "$APPLE_CERTIFICATE" ]; then
+            echo "::warning::Apple signing secrets not set: building an UNSIGNED app. See README > Releases."
+            exit 0
+          fi
+          for v in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID; do
+            [ -n "${!v}" ] && echo "$v=${!v}" >> "$GITHUB_ENV"
+          done
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tauriScript: npx --yes @tauri-apps/cli@2
+          args: --target universal-apple-darwin
+          tagName: v__VERSION__
+          releaseName: OpenPedal __VERSION__
+          releaseBody: Download the .dmg, open it, and drag OpenPedal to Applications.
+          releaseDraft: true

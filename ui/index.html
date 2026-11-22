@@ -2,14 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Pedal</title>
+<title>OpenPedal</title>
 <style>
   :root {
     --board: #17171a;
     --ink: #ece9e2;
     --dim: #8a8780;
     --pink: #ff2e88;
-    --pink-dark: #b8135c;
     --lcd: #b8ff5c;
     --amber: #ffb020;
     --red: #ff3b3b;
@@ -21,9 +20,8 @@
   body {
     font-family: -apple-system, "Helvetica Neue", sans-serif;
     color: var(--ink);
-    /* pedalboard: dark velcro-ish texture */
     background:
-      radial-gradient(1200px 600px at 50% 110%, #2a2630 0%, transparent 60%),
+      radial-gradient(1400px 700px at 50% 120%, #2a2630 0%, transparent 60%),
       repeating-linear-gradient(0deg, rgba(255,255,255,.018) 0 2px, transparent 2px 4px),
       repeating-linear-gradient(90deg, rgba(0,0,0,.25) 0 1px, transparent 1px 3px),
       var(--board);
@@ -31,194 +29,213 @@
     user-select: none; -webkit-user-select: none;
     overflow: hidden;
   }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  select:focus-visible, button:focus-visible, input:focus-visible, .knob:focus-visible { outline: 2px solid var(--pink); outline-offset: 2px; }
 
-  /* ---------- top bar ---------- */
-  header {
-    display: flex; align-items: center; gap: 14px;
-    padding: 12px 20px;
-    background: linear-gradient(#232227, #1b1a1f);
-    border-bottom: 1px solid #000;
-    box-shadow: 0 1px 0 rgba(255,255,255,.04);
-  }
-  .brand { font-family: var(--display); font-weight: 800; letter-spacing: .18em; font-size: 15px; margin-right: auto; }
+  /* ---------- header ---------- */
+  header { background: linear-gradient(#232227, #1b1a1f); border-bottom: 1px solid #000; box-shadow: 0 1px 0 rgba(255,255,255,.04); }
+  .row { display: flex; align-items: center; gap: 12px; padding: 10px 20px; }
+  .row + .row { padding-top: 0; }
+  .brand { font-family: var(--display); font-weight: 800; letter-spacing: .18em; font-size: 15px; margin-right: 8px; }
   .brand b { color: var(--pink); }
-  header label { font-size: 11px; color: var(--dim); text-transform: uppercase; letter-spacing: .1em; display: flex; align-items: center; gap: 8px; }
-  select, header button {
+  .spacer { flex: 1; }
+  .lbl { font-size: 10.5px; color: var(--dim); text-transform: uppercase; letter-spacing: .1em; display: flex; align-items: center; gap: 7px; }
+  header select, header input, header button, dialog input, dialog button {
     font: inherit; font-size: 13px; color: var(--ink);
-    background: #2c2b31; border: 1px solid #3a3940; border-radius: 7px;
-    padding: 6px 10px; outline: none;
+    background: #2c2b31; border: 1px solid #3a3940; border-radius: 7px; padding: 5px 9px; outline: none;
   }
-  select:focus-visible, button:focus-visible, .knob:focus-visible { outline: 2px solid var(--pink); outline-offset: 2px; }
-  header button { cursor: pointer; }
-  header button:hover { background: #36353c; }
-  .status { font-family: var(--mono); font-size: 12px; display: flex; align-items: center; gap: 7px; color: var(--dim); min-width: 150px; }
+  header button:hover:not(:disabled), dialog button:hover { background: #36353c; }
+  header button:disabled { opacity: .35; cursor: default; }
+  #preset { min-width: 190px; font-weight: 600; }
+  #dirty { color: var(--amber); font-size: 11px; letter-spacing: .05em; }
+  #bpm { width: 58px; text-align: center; font-family: var(--mono); }
+  #beat { width: 9px; height: 9px; border-radius: 50%; background: var(--pink); animation: beat .5s infinite; }
+  @keyframes beat { 0% { opacity: 1; box-shadow: 0 0 8px var(--pink); } 25%, 100% { opacity: .15; box-shadow: none; } }
+  .io select { max-width: 190px; }
+  .status { font-family: var(--mono); font-size: 12px; display: flex; align-items: center; gap: 7px; color: var(--dim); }
   .status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #555; }
   .status.ok::before { background: #3ddc84; box-shadow: 0 0 8px #3ddc84; }
   .status.err { color: var(--red); }
   .status.err::before { background: var(--red); box-shadow: 0 0 8px var(--red); }
 
   /* ---------- board ---------- */
-  main { flex: 1; display: flex; align-items: center; justify-content: center; gap: 56px; padding: 24px; position: relative; }
+  main { flex: 1; display: flex; min-height: 0; padding: 22px 0 0 22px; gap: 34px; }
+  .chain { flex: 1; display: flex; gap: 30px; align-items: flex-start; overflow-x: auto; padding: 0 22px 22px 0; min-height: 0; }
+  .chain::-webkit-scrollbar { height: 10px; }
+  .chain::-webkit-scrollbar-thumb { background: #34333a; border-radius: 5px; }
+  .empty { align-self: center; margin: auto; color: var(--dim); font-size: 14px; border: 2px dashed #34333a; border-radius: 16px; padding: 60px 40px; text-align: center; line-height: 1.6; }
+  .marker { flex: 0 0 4px; align-self: stretch; margin: 0 -17px; background: var(--pink); border-radius: 2px; box-shadow: 0 0 12px var(--pink); }
 
   .pedal {
-    position: relative; z-index: 1;
-    width: 330px; height: 500px;
-    border-radius: 18px;
-    padding: 26px 24px 22px;
+    --c: #333; --tick: rgba(0,0,0,.5); --fg: #fff;
+    position: relative; flex: 0 0 auto;
+    width: 200px; height: 440px; border-radius: 16px;
+    padding: 14px 14px 16px;
     display: flex; flex-direction: column; align-items: center;
-    box-shadow:
-      0 30px 50px rgba(0,0,0,.55),
-      0 8px 14px rgba(0,0,0,.5),
-      inset 0 2px 0 rgba(255,255,255,.25),
-      inset 0 -4px 0 rgba(0,0,0,.25);
+    color: var(--fg);
+    background:
+      radial-gradient(140% 70% at 30% 0%, rgba(255,255,255,.26), transparent 50%),
+      linear-gradient(160deg, var(--c) 0%, color-mix(in srgb, var(--c) 62%, #000) 100%);
+    box-shadow: 0 26px 40px rgba(0,0,0,.55), 0 6px 12px rgba(0,0,0,.5), inset 0 2px 0 rgba(255,255,255,.25), inset 0 -4px 0 rgba(0,0,0,.25);
+    transition: opacity .15s, filter .15s, transform .15s;
   }
+  .pedal.light { --fg: #1b1b1f; --tick: rgba(0,0,0,.45); }
+  .pedal:not(.light) { --tick: rgba(255,255,255,.4); }
+  .pedal.off { filter: saturate(.55) brightness(.8); }
+  .pedal.dragging { opacity: .35; transform: scale(.97); }
   .pedal::after { /* screws */
-    content: ""; position: absolute; inset: 10px; pointer-events: none;
-    background:
-      radial-gradient(circle at 6px 6px, #c9c9cf 0 3px, #555 3.5px, transparent 4px) top left / 12px 12px no-repeat,
-      radial-gradient(circle at 6px 6px, #c9c9cf 0 3px, #555 3.5px, transparent 4px) top right / 12px 12px no-repeat,
-      radial-gradient(circle at 6px 6px, #c9c9cf 0 3px, #555 3.5px, transparent 4px) bottom left / 12px 12px no-repeat,
-      radial-gradient(circle at 6px 6px, #c9c9cf 0 3px, #555 3.5px, transparent 4px) bottom right / 12px 12px no-repeat;
+    content: ""; position: absolute; inset: 8px; pointer-events: none;
+    --s: radial-gradient(circle at 5px 5px, #c9c9cf 0 2.5px, #555 3px, transparent 3.5px);
+    background: var(--s) top left / 10px 10px no-repeat, var(--s) top right / 10px 10px no-repeat,
+                var(--s) bottom left / 10px 10px no-repeat, var(--s) bottom right / 10px 10px no-repeat;
   }
-  .drive {
-    background:
-      radial-gradient(140% 80% at 30% 0%, rgba(255,255,255,.28), transparent 50%),
-      linear-gradient(160deg, var(--pink) 0%, #e0217a 55%, var(--pink-dark) 100%);
+  /* patch cable into each pedal */
+  .chain .pedal::before, .tuner::before {
+    content: ""; position: absolute; top: 70px; left: -32px; width: 32px; height: 7px; border-radius: 4px;
+    background: linear-gradient(#2b2b31, #0a0a0c); box-shadow: 0 2px 3px rgba(0,0,0,.5);
   }
-  .tuner {
-    width: 270px;
-    background:
-      radial-gradient(140% 80% at 30% 0%, rgba(255,255,255,.12), transparent 50%),
-      linear-gradient(160deg, #3a3a40, #222226 70%, #1a1a1d);
-  }
+  .tuner::before { left: auto; right: -34px; width: 34px; }
 
-  .name { font-family: var(--display); text-align: center; margin-top: auto; line-height: 1; }
-  .name h1 { margin: 0; font-size: 40px; font-weight: 900; font-style: italic; letter-spacing: -.01em; text-transform: uppercase; }
-  .drive .name h1 { color: #fff; text-shadow: 0 2px 0 var(--pink-dark), 0 3px 8px rgba(0,0,0,.25); }
-  .tuner .name h1 { font-size: 32px; color: var(--ink); }
-  .name p { margin: 6px 0 0; font-size: 10px; letter-spacing: .35em; text-transform: uppercase; opacity: .75; }
+  .tools { display: flex; gap: 4px; align-self: stretch; justify-content: flex-end; height: 18px; margin: -4px -2px 6px; opacity: 0; transition: opacity .15s; }
+  .pedal:hover .tools, .pedal:focus-within .tools { opacity: 1; }
+  .tools button { border: none; background: rgba(0,0,0,.3); color: #fff; border-radius: 5px; font-size: 9px; width: 20px; height: 18px; padding: 0; }
+  .tools button:hover { background: rgba(0,0,0,.55); }
+
+  .name { font-family: var(--display); text-align: center; line-height: 1; cursor: grab; padding: 4px 6px 0; }
+  .name:active { cursor: grabbing; }
+  .name h2 { margin: 0; font-size: 22px; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: -.01em; text-shadow: 0 2px 0 rgba(0,0,0,.18); }
+  .name p { margin: 5px 0 0; font-size: 8.5px; letter-spacing: .3em; text-transform: uppercase; opacity: .75; }
 
   /* ---------- knobs ---------- */
-  .knobs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px 18px; width: 100%; }
-  .knob { display: flex; flex-direction: column; align-items: center; gap: 6px; outline: none; border-radius: 10px; }
-  .knob .ring {
-    --s: 70px;
-    width: var(--s); height: var(--s); border-radius: 50%;
-    position: relative; cursor: ns-resize; touch-action: none;
-    padding: 6px;
-  }
-  .knob.small .ring { --s: 56px; padding: 5px; }
-  .knob .ring::before { /* tick ring, masked off across the bottom gap */
+  .knobs { display: grid; gap: 8px 4px; width: 100%; justify-items: center; }
+  .knob { display: flex; flex-direction: column; align-items: center; gap: 3px; outline: none; border-radius: 8px; width: 56px; }
+  .knob .ring { width: 50px; height: 50px; border-radius: 50%; position: relative; cursor: ns-resize; touch-action: none; padding: 5px; }
+  .knob .ring::before {
     content: ""; position: absolute; inset: 0; border-radius: 50%;
-    background: repeating-conic-gradient(from -135deg, rgba(0,0,0,.55) 0 1.5deg, transparent 1.5deg 27deg);
+    background: repeating-conic-gradient(from -135deg, var(--tick) 0 1.6deg, transparent 1.6deg 27deg);
     -webkit-mask: conic-gradient(from 137deg, transparent 0 86deg, #000 86deg);
             mask: conic-gradient(from 137deg, transparent 0 86deg, #000 86deg);
   }
   .knob .cap {
     position: relative; width: 100%; height: 100%; border-radius: 50%;
-    background:
-      radial-gradient(circle at 35% 28%, #fff 0%, #e6e3dc 30%, #b9b5ad 75%, #8f8b84 100%);
-    box-shadow: 0 6px 10px rgba(0,0,0,.45), 0 2px 3px rgba(0,0,0,.4), inset 0 -3px 4px rgba(0,0,0,.2);
-    transition: transform .04s linear;
+    background: radial-gradient(circle at 35% 28%, #fff 0%, #e6e3dc 30%, #b9b5ad 75%, #8f8b84 100%);
+    box-shadow: 0 5px 8px rgba(0,0,0,.45), 0 2px 3px rgba(0,0,0,.4), inset 0 -3px 4px rgba(0,0,0,.2);
   }
-  .knob .cap i {
-    position: absolute; left: 50%; top: 7%; width: 4px; height: 34%;
-    margin-left: -2px; border-radius: 2px; background: #1b1b1f;
-  }
-  .knob label { font-family: var(--display); font-weight: 800; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; }
-  .knob output {
-    font-family: var(--mono); font-size: 10.5px; padding: 2px 6px; border-radius: 4px;
-    background: rgba(0,0,0,.28); color: #fff; min-width: 54px; text-align: center;
-    opacity: .55; transition: opacity .15s;
-  }
+  .knob .cap i { position: absolute; left: 50%; top: 7%; width: 3px; height: 34%; margin-left: -1.5px; border-radius: 2px; background: #1b1b1f; }
+  .knob label { font-family: var(--display); font-weight: 800; font-size: 9px; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }
+  .knob output { font-family: var(--mono); font-size: 9.5px; padding: 1px 4px; border-radius: 4px; background: rgba(0,0,0,.3); color: #fff; min-width: 50px; text-align: center; opacity: .6; transition: opacity .15s; white-space: nowrap; }
   .knob:hover output, .knob.active output, .knob:focus-visible output { opacity: 1; }
 
-  /* ---------- LEDs + footswitch ---------- */
-  .led {
-    width: 14px; height: 14px; border-radius: 50%; margin: 16px 0 12px;
-    background: radial-gradient(circle at 35% 30%, #5a1a1a, #2a0808);
-    box-shadow: inset 0 1px 2px rgba(0,0,0,.6), 0 0 0 2px rgba(0,0,0,.35);
-    transition: all .08s;
-  }
-  .led.on {
-    background: radial-gradient(circle at 35% 30%, #fff 0, #ff6b6b 25%, #e00000 70%);
-    box-shadow: 0 0 10px 3px rgba(255,40,40,.7), 0 0 30px 6px rgba(255,40,40,.35), 0 0 0 2px rgba(0,0,0,.35);
-  }
-  .foot {
-    width: 74px; height: 74px; border-radius: 50%; border: none; cursor: pointer;
-    background: radial-gradient(circle, #d8d8dd 0 32%, #9a9aa2 34%, #6e6e76 60%, #4a4a50 100%);
-    box-shadow: 0 8px 14px rgba(0,0,0,.5), inset 0 2px 1px rgba(255,255,255,.5), inset 0 -3px 4px rgba(0,0,0,.4);
-    transition: transform .06s;
-  }
-  .foot:active { transform: translateY(2px) scale(.98); }
-  .reset { margin-top: 10px; background: none; border: none; color: inherit; opacity: .6; font-size: 10px; letter-spacing: .2em; text-transform: uppercase; cursor: pointer; }
-  .reset:hover { opacity: 1; }
+  /* sidechain key selector */
+  .sc { margin-top: 10px; display: flex; align-items: center; gap: 6px; font-family: var(--display); font-weight: 800; font-size: 9px; letter-spacing: .14em; text-transform: uppercase; }
+  .sc select { font: 600 11px -apple-system, sans-serif; color: #fff; background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.15); border-radius: 6px; padding: 3px 6px; }
+  .pedal.keyed .sc select { border-color: var(--lcd); box-shadow: 0 0 8px rgba(184,255,92,.35); }
 
-  /* ---------- tuner display ---------- */
-  .lcd {
-    width: 100%; height: 196px; border-radius: 10px; padding: 14px 14px 12px;
+  /* looper */
+  .loop { width: 100%; margin-top: 10px; }
+  .loop-lcd { background: #070b05; border-radius: 8px; padding: 8px 10px; box-shadow: inset 0 2px 8px rgba(0,0,0,.9), 0 0 0 2px #111; font-family: var(--mono); color: var(--lcd); display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: center; }
+  .loop-lcd b { font-size: 14px; letter-spacing: .05em; }
+  .loop-lcd .secs { font-size: 11px; opacity: .8; }
+  .loop-lcd .prog { grid-column: 1 / -1; height: 4px; background: #1c2a14; border-radius: 2px; overflow: hidden; }
+  .loop-lcd .prog i { display: block; height: 100%; width: 0; background: var(--lcd); }
+  .loop-btns { display: flex; gap: 6px; margin-top: 8px; }
+  .loop-btns button { flex: 1; border: none; border-radius: 6px; background: rgba(0,0,0,.35); color: #fff; font-family: var(--display); font-weight: 800; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; padding: 6px 0; }
+  .loop-btns button:hover { background: rgba(0,0,0,.55); }
+
+  /* LEDs + footswitch */
+  .led { width: 12px; height: 12px; border-radius: 50%; margin: auto 0 10px; flex-shrink: 0;
+    background: radial-gradient(circle at 35% 30%, #5a1a1a, #2a0808);
+    box-shadow: inset 0 1px 2px rgba(0,0,0,.6), 0 0 0 2px rgba(0,0,0,.35); }
+  .led.on { background: radial-gradient(circle at 35% 30%, #fff 0, #ff6b6b 25%, #e00000 70%); box-shadow: 0 0 10px 3px rgba(255,40,40,.7), 0 0 26px 6px rgba(255,40,40,.3), 0 0 0 2px rgba(0,0,0,.35); }
+  .led.on.green { background: radial-gradient(circle at 35% 30%, #fff 0, #8dff8d 25%, #12c412 70%); box-shadow: 0 0 10px 3px rgba(40,255,90,.6), 0 0 0 2px rgba(0,0,0,.35); }
+  .led.on.amber { background: radial-gradient(circle at 35% 30%, #fff 0, #ffd36b 25%, #e09000 70%); box-shadow: 0 0 10px 3px rgba(255,170,40,.6), 0 0 0 2px rgba(0,0,0,.35); }
+  .foot { width: 60px; height: 60px; border-radius: 50%; border: none; flex-shrink: 0;
+    background: radial-gradient(circle, #d8d8dd 0 32%, #9a9aa2 34%, #6e6e76 60%, #4a4a50 100%);
+    box-shadow: 0 7px 12px rgba(0,0,0,.5), inset 0 2px 1px rgba(255,255,255,.5), inset 0 -3px 4px rgba(0,0,0,.4);
+    transition: transform .06s; margin-bottom: 12px; }
+  .foot:active { transform: translateY(2px) scale(.97); }
+
+  /* ---------- tuner ---------- */
+  .tuner { --c: #2a2a2f; width: 220px; flex: 0 0 220px; }
+  .lcd { width: 100%; height: 170px; border-radius: 10px; padding: 12px 12px 10px; margin-top: 8px;
     background: radial-gradient(120% 90% at 50% 20%, #0f1a0a, #070b05);
     box-shadow: inset 0 3px 10px rgba(0,0,0,.9), 0 0 0 3px #111, 0 1px 0 4px rgba(255,255,255,.06);
-    display: flex; flex-direction: column; align-items: center;
-    font-family: var(--mono); color: var(--lcd);
-    position: relative; overflow: hidden;
-  }
-  .lcd::after { /* scanlines */
-    content: ""; position: absolute; inset: 0; pointer-events: none;
-    background: repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 1px, transparent 1px 3px);
-  }
-  .note { display: flex; align-items: flex-start; height: 92px; font-family: var(--display); font-weight: 900; transition: color .1s, text-shadow .1s; }
-  .note .letter { font-size: 88px; line-height: 1; }
-  .note .acc { font-size: 34px; margin-top: 6px; min-width: 22px; }
-  .note sub { font-size: 20px; align-self: flex-end; margin-bottom: 6px; opacity: .6; }
+    display: flex; flex-direction: column; align-items: center; font-family: var(--mono); color: var(--lcd); position: relative; overflow: hidden; }
+  .lcd::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 1px, transparent 1px 3px); }
+  .note { display: flex; align-items: flex-start; height: 80px; font-family: var(--display); font-weight: 900; transition: color .1s, text-shadow .1s; }
+  .note .letter { font-size: 76px; line-height: 1; }
+  .note .acc { font-size: 30px; margin-top: 4px; min-width: 18px; }
+  .note sub { font-size: 18px; align-self: flex-end; margin-bottom: 4px; opacity: .6; }
   .lcd.idle .note { color: #2d4020; }
   .lcd.intune .note { color: #d9ffb0; text-shadow: 0 0 18px rgba(184,255,92,.8); }
-  .cents { display: grid; grid-template-columns: repeat(21, 1fr); gap: 3px; width: 100%; margin-top: 8px; height: 22px; align-items: end; }
-  .cents span { height: 60%; border-radius: 1.5px; background: #1c2a14; transition: background .06s, box-shadow .06s; }
+  .cents { display: grid; grid-template-columns: repeat(21, 1fr); gap: 2px; width: 100%; margin-top: 8px; height: 20px; align-items: end; }
+  .cents span { height: 60%; border-radius: 1.5px; background: #1c2a14; }
   .cents span:nth-child(11) { height: 100%; }
   .cents span.on { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
   .cents span.on.mid { background: var(--lcd); box-shadow: 0 0 10px var(--lcd); }
-  .flat-sharp { display: flex; justify-content: space-between; width: 100%; font-size: 10px; margin-top: 6px; color: #5a7a40; }
+  .flat-sharp { display: flex; justify-content: space-between; width: 100%; font-size: 9.5px; margin-top: 6px; color: #5a7a40; }
   .flat-sharp .hz { color: var(--lcd); opacity: .8; }
-
-  .meter { width: 100%; margin-top: 18px; }
-  .meter .bar { display: grid; grid-template-columns: repeat(24, 1fr); gap: 2px; height: 10px; }
-  .meter .bar span { background: #2a2a2e; border-radius: 1px; }
+  .meter { width: 100%; margin-top: 16px; }
+  .meter .bar { display: grid; grid-template-columns: repeat(24, 1fr); gap: 2px; height: 9px; }
+  .meter .bar span { background: #3a3a40; border-radius: 1px; }
   .meter .bar span.on { background: #3ddc84; }
   .meter .bar span.on.hot { background: var(--amber); }
   .meter .bar span.on.clip { background: var(--red); }
-  .meter .lbl { display: flex; justify-content: space-between; font-size: 9.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); margin-top: 6px; }
-  .meter .lbl b { font-family: var(--mono); font-weight: 500; color: var(--ink); letter-spacing: 0; text-transform: none; }
-  .hint { font-size: 9.5px; color: var(--dim); margin-top: 4px; text-align: center; letter-spacing: .05em; }
+  .meter .mlbl { display: flex; justify-content: space-between; font-size: 9px; letter-spacing: .14em; text-transform: uppercase; opacity: .7; margin-top: 5px; }
+  .meter .mlbl b { font-family: var(--mono); font-weight: 500; letter-spacing: 0; text-transform: none; }
+  .hint { font-size: 9px; opacity: .55; margin-top: 4px; text-align: center; }
 
-  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  /* ---------- palette ---------- */
+  footer { padding: 12px 22px 16px; background: linear-gradient(transparent, rgba(0,0,0,.35)); }
+  footer .lbl { margin-bottom: 8px; }
+  .palette { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { --c: #444; display: flex; align-items: center; gap: 8px; border: 1px solid #34333a; background: #232227; border-radius: 999px; padding: 6px 12px 6px 7px; font-size: 12.5px; font-weight: 600; cursor: grab; }
+  .chip i { width: 14px; height: 14px; border-radius: 50%; background: var(--c); box-shadow: inset 0 -2px 2px rgba(0,0,0,.3), 0 0 0 1px rgba(255,255,255,.12); }
+  .chip:hover { background: #2e2d33; border-color: #4a4950; }
+
+  dialog { background: #232227; color: var(--ink); border: 1px solid #3a3940; border-radius: 12px; padding: 20px; box-shadow: 0 30px 60px rgba(0,0,0,.6); }
+  dialog::backdrop { background: rgba(0,0,0,.5); }
+  dialog label { display: flex; flex-direction: column; gap: 8px; font-size: 12px; color: var(--dim); }
+  dialog input { width: 280px; font-size: 15px; }
+  dialog menu { display: flex; justify-content: flex-end; gap: 8px; padding: 0; margin: 16px 0 0; }
+  dialog button[value="ok"] { background: var(--pink); border-color: var(--pink); color: #fff; font-weight: 700; }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
 </head>
 <body>
 <header>
-  <div class="brand">PEDAL<b>·</b>BOARD</div>
-  <label>Input
-    <select id="in" aria-label="Input device"></select>
-  </label>
-  <label>Ch
-    <select id="ch" aria-label="Input channel">
-      <option value="0">1</option><option value="1" selected>2</option><option value="2">3</option><option value="3">4</option>
-    </select>
-  </label>
-  <label>Output
-    <select id="out" aria-label="Output device"></select>
-  </label>
-  <button id="rescan" title="Rescan devices" aria-label="Rescan devices">↻</button>
-  <label>Buffer
-    <select id="buf" aria-label="Buffer size in frames">
-      <option>32</option><option selected>64</option><option>128</option><option>256</option><option>512</option>
-    </select>
-  </label>
-  <div class="status" id="status" role="status">connecting…</div>
+  <div class="row">
+    <div class="brand">OPEN<b>·</b>PEDAL</div>
+    <span class="lbl">Preset</span>
+    <select id="preset" aria-label="Preset"></select>
+    <span id="dirty" hidden>● edited</span>
+    <button id="saveBtn">Save…</button>
+    <button id="delBtn" disabled>Delete</button>
+    <div class="spacer"></div>
+    <span class="lbl">BPM</span>
+    <input id="bpm" type="number" min="40" max="300" aria-label="Tempo in BPM">
+    <button id="tap" title="Tap tempo">Tap</button>
+    <div id="beat" aria-hidden="true"></div>
+  </div>
+  <div class="row io">
+    <label class="lbl">In <select id="in" aria-label="Input device"></select></label>
+    <label class="lbl">Ch <select id="ch" aria-label="Guitar input channel"></select></label>
+    <label class="lbl" title="Input channel used when a pedal's key is set to Aux in">Sidechain ch <select id="aux" aria-label="Sidechain aux input channel"></select></label>
+    <label class="lbl">Out <select id="out" aria-label="Output device"></select></label>
+    <button id="rescan" title="Rescan devices" aria-label="Rescan devices">↻</button>
+    <label class="lbl">Buffer
+      <select id="buf" aria-label="Buffer size in frames">
+        <option>32</option><option selected>64</option><option>128</option><option>256</option><option>512</option>
+      </select>
+    </label>
+    <div class="spacer"></div>
+    <div class="status" id="status" role="status">connecting…</div>
+  </div>
 </header>
 
 <main>
-  <section class="pedal tuner" aria-label="Tuner pedal">
+  <section class="pedal tuner" aria-label="Tuner">
     <div class="lcd idle" id="lcd">
       <div class="note" aria-live="polite"><span class="letter" id="letter">–</span><span class="acc" id="acc"></span><sub id="oct"></sub></div>
       <div class="cents" id="cents"></div>
@@ -226,183 +243,379 @@
     </div>
     <div class="meter">
       <div class="bar" id="meter"></div>
-      <div class="lbl"><span>Input</span><b id="db">−∞ dB</b></div>
+      <div class="mlbl"><span>Input</span><b id="db">−∞ dB</b></div>
       <div class="hint">set interface gain so strums peak near −12</div>
     </div>
     <div class="led" id="muteLed"></div>
     <button class="foot" id="muteSw" aria-label="Mute while tuning" aria-pressed="false"></button>
-    <div class="name"><h1>Tune</h1><p>stomp to mute</p></div>
+    <div class="name" style="cursor:default"><h2>Tune</h2><p>stomp to mute</p></div>
   </section>
-
-  <section class="pedal drive" aria-label="Drive pedal">
-    <div class="knobs">
-      <div class="knob" data-key="level" data-label="Level"></div>
-      <div class="knob" data-key="drive" data-label="Drive"></div>
-      <div class="knob" data-key="gate_db" data-label="Gate"></div>
-      <div class="knob small" data-key="bass" data-label="Bass"></div>
-      <div class="knob small" data-key="mid" data-label="Mid"></div>
-      <div class="knob small" data-key="treble" data-label="Treble"></div>
-    </div>
-    <button class="reset" id="reset">reset</button>
-    <div class="led" id="driveLed"></div>
-    <button class="foot" id="driveSw" aria-label="Drive on/off" aria-pressed="true"></button>
-    <div class="name"><h1>Pop·Punk</h1><p>high gain drive</p></div>
-  </section>
+  <div class="chain" id="chain" aria-label="Effects chain, signal flows left to right"></div>
 </main>
+
+<footer>
+  <div class="lbl">Add pedal — click, or drag into the chain</div>
+  <div class="palette" id="palette"></div>
+</footer>
+
+<dialog id="saveDlg">
+  <form method="dialog">
+    <label>Preset name <input id="saveName" required maxlength="40" autocomplete="off"></label>
+    <menu><button value="cancel" formnovalidate>Cancel</button><button value="ok">Save</button></menu>
+  </form>
+</dialog>
 
 <script>
 const { invoke } = window.__TAURI__.core;
-const $ = (s) => document.querySelector(s);
+const $ = (s, r = document) => r.querySelector(s);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+function h(tag, attrs = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') e.className = v;
+    else if (k.startsWith('on')) e[k] = v;
+    else e.setAttribute(k, v);
+  }
+  e.append(...kids.flat().filter((x) => x != null && x !== false));
+  return e;
+}
 
-const db = (v) => `${v > 0 ? '+' : ''}${v.toFixed(1)} dB`;
-const SPEC = {
-  level:   { min: 0,   max: 1,   fmt: (v) => `${Math.round(v * 100)}%` },
-  drive:   { min: 0.1, max: 4,   fmt: (v) => `${v.toFixed(2)}×` },
-  gate_db: { min: -80, max: -20, fmt: (v) => `${Math.round(v)} dB` },
-  bass:    { min: -12, max: 12,  fmt: db },
-  mid:     { min: -12, max: 12,  fmt: db },
-  treble:  { min: -12, max: 12,  fmt: db },
-};
+let catalog = [], spec = {}, board, presets = [], current = '', dirty = false, nextId = 1;
+const chainEl = $('#chain');
 
-let knobs, defaults;
-const renders = [];
-
-// coalesce knob sends to one per frame
+// ---------- board state ----------
+function persist() {
+  localStorage.setItem('board', JSON.stringify(board));
+  localStorage.setItem('preset', current);
+  localStorage.setItem('dirty', dirty ? '1' : '');
+}
 let queued = false;
-function push() {
+function send(edit = true) {
+  if (edit && !dirty) { dirty = true; renderPresetState(); }
+  persist();
   if (queued) return;
   queued = true;
-  requestAnimationFrame(() => { queued = false; invoke('set_knobs', { knobs }); });
+  requestAnimationFrame(() => { queued = false; invoke('set_board', { board }); }); // one send per frame while dragging knobs
 }
+const defaults = (kind) => Object.fromEntries(spec[kind].params.map((q) => [q.name, q.def]));
+const newPedal = (kind, params = {}, on = true) => ({ id: nextId++, kind, on, params: { ...defaults(kind), ...params } });
 
-function makeKnob(el) {
-  const key = el.dataset.key, s = SPEC[key];
-  el.tabIndex = 0;
-  el.setAttribute('role', 'slider');
-  el.setAttribute('aria-label', el.dataset.label);
-  el.innerHTML = `<div class="ring"><div class="cap"><i></i></div></div><label>${el.dataset.label}</label><output></output>`;
-  const ring = el.querySelector('.ring'), cap = el.querySelector('.cap'), out = el.querySelector('output');
-  const span = s.max - s.min;
-  const render = () => {
-    const t = (knobs[key] - s.min) / span;
-    cap.style.transform = `rotate(${-135 + 270 * t}deg)`;
-    out.textContent = s.fmt(knobs[key]);
-    el.setAttribute('aria-valuetext', out.textContent);
-  };
-  const set = (v) => { knobs[key] = Math.min(s.max, Math.max(s.min, v)); render(); push(); };
-
-  let y0 = null, v0 = 0;
-  ring.addEventListener('pointerdown', (e) => {
-    y0 = e.clientY; v0 = knobs[key];
-    ring.setPointerCapture(e.pointerId);
-    el.classList.add('active');
-  });
-  ring.addEventListener('pointermove', (e) => {
-    if (y0 === null) return;
-    const fine = e.shiftKey ? 0.2 : 1; // hold shift for fine control
-    set(v0 + ((y0 - e.clientY) / 180) * span * fine);
-  });
-  const end = () => { y0 = null; el.classList.remove('active'); };
-  ring.addEventListener('pointerup', end);
-  ring.addEventListener('pointercancel', end);
-  ring.addEventListener('dblclick', () => set(defaults[key]));
-  ring.addEventListener('wheel', (e) => { e.preventDefault(); set(knobs[key] - Math.sign(e.deltaY) * span / 100); }, { passive: false });
-  el.addEventListener('keydown', (e) => {
-    const step = span / (e.shiftKey ? 200 : 40);
-    if (e.key === 'ArrowUp' || e.key === 'ArrowRight') set(knobs[key] + step);
-    else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') set(knobs[key] - step);
-    else return;
-    e.preventDefault();
-  });
-  renders.push(render);
+function add(kind, at = board.pedals.length) {
+  board.pedals.splice(at, 0, newPedal(kind));
+  render(); send();
+  chainEl.children[at]?.scrollIntoView({ behavior: 'smooth', inline: 'nearest' });
 }
-
-function renderSwitches() {
-  $('#driveLed').classList.toggle('on', !knobs.bypass);
-  $('#driveSw').setAttribute('aria-pressed', String(!knobs.bypass));
-  $('#muteLed').classList.toggle('on', knobs.mute);
-  $('#muteSw').setAttribute('aria-pressed', String(knobs.mute));
+function move(id, d) {
+  const i = board.pedals.findIndex((p) => p.id === id), j = i + d;
+  if (j < 0 || j >= board.pedals.length) return;
+  [board.pedals[i], board.pedals[j]] = [board.pedals[j], board.pedals[i]];
+  render(); send();
+  $(`[data-id="${id}"] .tools button`)?.focus();
 }
-$('#driveSw').onclick = () => { knobs.bypass = !knobs.bypass; renderSwitches(); push(); };
-$('#muteSw').onclick = () => { knobs.mute = !knobs.mute; renderSwitches(); push(); };
-$('#reset').onclick = () => {
-  knobs = { ...defaults, bypass: knobs.bypass, mute: knobs.mute };
-  renders.forEach((r) => r()); push();
-};
+function remove(id) { board.pedals = board.pedals.filter((p) => p.id !== id); render(); send(); }
 
-// ---------- devices ----------
-async function scan() {
-  const [ins, din, outs, dout] = await invoke('devices');
-  const fill = (sel, names, def) => {
-    const keep = sel.value;
-    sel.innerHTML = '';
-    for (const n of names) sel.add(new Option(n, n));
-    sel.value = names.includes(keep) ? keep : def;
-  };
-  fill($('#in'), ins, din); fill($('#out'), outs, dout);
-}
-async function connect() {
-  const st = $('#status');
-  st.className = 'status'; st.textContent = 'connecting…';
-  try {
-    st.textContent = await invoke('connect', { input: $('#in').value, ch: Number($('#ch').value), out: $('#out').value, buf: Number($('#buf').value) });
-    st.className = 'status ok';
-  } catch (e) {
-    st.textContent = String(e); st.className = 'status err';
+// ---------- formatting / taper ----------
+function fmt(q, v) {
+  switch (q.unit) {
+    case 'ms': return v >= 1000 ? `${(v / 1000).toFixed(2)} s` : `${v < 10 ? v.toFixed(1) : Math.round(v)} ms`;
+    case 'Hz': return `${v < 10 ? v.toFixed(2) : Math.round(v)} Hz`;
+    case 'dB': return `${v > 0 ? '+' : ''}${v.toFixed(1)} dB`;
+    case '×': return `${v.toFixed(2)}×`;
+    case ':1': return `${v.toFixed(1)}:1`;
+    default: return (v * 10).toFixed(1); // unitless knobs read 0–10 like a real pedal
   }
 }
-$('#in').onchange = $('#ch').onchange = $('#out').onchange = connect;
-$('#buf').onchange = connect;
+const isLog = (q) => (q.unit === 'ms' || q.unit === 'Hz') && q.min > 0; // times & frequencies feel right on a log taper
+const norm = (q, v) => isLog(q) ? Math.log(v / q.min) / Math.log(q.max / q.min) : (v - q.min) / (q.max - q.min);
+const denorm = (q, t) => { t = clamp(t, 0, 1); return isLog(q) ? q.min * (q.max / q.min) ** t : q.min + t * (q.max - q.min); };
+function isLight(hex) {
+  const n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.62;
+}
+
+// ---------- knob ----------
+function makeKnob(q, pd) {
+  const cap = h('div', { class: 'cap' }, h('i')), ring = h('div', { class: 'ring' }, cap), out = h('output');
+  const el = h('div', { class: 'knob', tabindex: 0, role: 'slider', 'aria-label': q.name }, ring, h('label', {}, q.name), out);
+  const get = () => pd.params[q.name] ?? q.def;
+  const render = () => {
+    cap.style.transform = `rotate(${-135 + 270 * norm(q, get())}deg)`;
+    out.textContent = fmt(q, get());
+    el.setAttribute('aria-valuetext', out.textContent);
+  };
+  const setT = (t) => { pd.params[q.name] = denorm(q, t); render(); send(); };
+  let y0 = null, t0 = 0;
+  ring.onpointerdown = (e) => { y0 = e.clientY; t0 = norm(q, get()); ring.setPointerCapture(e.pointerId); el.classList.add('active'); };
+  ring.onpointermove = (e) => { if (y0 !== null) setT(t0 + ((y0 - e.clientY) / 180) * (e.shiftKey ? 0.2 : 1)); };
+  ring.onpointerup = ring.onpointercancel = () => { y0 = null; el.classList.remove('active'); };
+  ring.ondblclick = () => { pd.params[q.name] = q.def; render(); send(); };
+  ring.addEventListener('wheel', (e) => { e.preventDefault(); setT(norm(q, get()) - Math.sign(e.deltaY) / 100); }, { passive: false });
+  el.onkeydown = (e) => {
+    const st = e.shiftKey ? 0.005 : 0.025;
+    if (e.key === 'ArrowUp' || e.key === 'ArrowRight') setT(norm(q, get()) + st);
+    else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') setT(norm(q, get()) - st);
+    else return;
+    e.preventDefault();
+  };
+  render();
+  return el;
+}
+
+// ---------- pedal ----------
+const act = (id, action) => invoke('pedal_action', { id, action });
+function makePedal(pd) {
+  const s = spec[pd.kind];
+  const knobs = s.params.filter((q) => !q.choices), choices = s.params.filter((q) => q.choices);
+  const el = h('section', { class: 'pedal fx', 'data-id': pd.id, style: `--c:${s.color}`, 'aria-label': s.name });
+  el.classList.toggle('light', isLight(s.color));
+  el.classList.toggle('off', !pd.on);
+  const cols = knobs.length === 1 ? 1 : knobs.length === 2 || knobs.length === 4 ? 2 : 3;
+
+  const sc = choices.map((q) => {
+    const sel = h('select', { 'aria-label': `${s.name} sidechain key` }, q.choices.map((c, j) => h('option', { value: j }, c)));
+    sel.value = Math.round(pd.params[q.name] ?? q.def);
+    el.classList.toggle('keyed', +sel.value > 0);
+    sel.onchange = () => { pd.params[q.name] = +sel.value; el.classList.toggle('keyed', +sel.value > 0); send(); };
+    return h('label', { class: 'sc', title: 'Sidechain: what drives this pedal' }, '⇠ key', sel);
+  });
+
+  const loop = pd.kind === 'looper' && h('div', { class: 'loop' },
+    h('div', { class: 'loop-lcd' }, h('b', { class: 'st' }, 'EMPTY'), h('span', { class: 'secs' }, '0.0 s'), h('div', { class: 'prog' }, h('i'))),
+    h('div', { class: 'loop-btns' }, h('button', { onclick: () => act(pd.id, 'stop') }, 'Stop'), h('button', { onclick: () => act(pd.id, 'clear') }, 'Clear')));
+
+  const led = h('div', { class: 'led' + (pd.on && pd.kind !== 'looper' ? ' on' : '') });
+  const foot = h('button', { class: 'foot', 'aria-label': pd.kind === 'looper' ? 'Looper: record, play, overdub' : `${s.name} on/off`, 'aria-pressed': String(pd.on) });
+  foot.onclick = () => {
+    if (pd.kind === 'looper') return act(pd.id, 'foot');
+    pd.on = !pd.on;
+    led.classList.toggle('on', pd.on); el.classList.toggle('off', !pd.on); foot.setAttribute('aria-pressed', String(pd.on));
+    send();
+  };
+
+  const name = h('div', { class: 'name', draggable: 'true', title: 'Drag to reorder' }, h('h2', {}, s.name), h('p', {}, s.blurb));
+  name.ondragstart = (e) => { e.dataTransfer.setData('text/plain', `id:${pd.id}`); e.dataTransfer.setDragImage(el, 100, 400); el.classList.add('dragging'); };
+  name.ondragend = () => { el.classList.remove('dragging'); marker.remove(); };
+
+  el.append(...[
+    h('div', { class: 'tools' },
+      h('button', { title: 'Move left', 'aria-label': `Move ${s.name} left`, onclick: () => move(pd.id, -1) }, '◀'),
+      h('button', { title: 'Move right', 'aria-label': `Move ${s.name} right`, onclick: () => move(pd.id, 1) }, '▶'),
+      h('button', { title: 'Remove', 'aria-label': `Remove ${s.name}`, onclick: () => remove(pd.id) }, '✕')),
+    h('div', { class: 'knobs', style: `grid-template-columns:repeat(${cols},1fr)` }, knobs.map((q) => makeKnob(q, pd))),
+    ...sc, loop, led, foot, name,
+  ].filter(Boolean));
+  return el;
+}
+
+function render() {
+  chainEl.replaceChildren(...(board.pedals.length
+    ? board.pedals.map(makePedal)
+    : [h('div', { class: 'empty' }, 'Empty board.', h('br'), 'Pick a preset, or add pedals from below.')]));
+}
+
+// ---------- drag & drop (reorder + add from palette) ----------
+const marker = h('div', { class: 'marker' });
+const cards = () => [...chainEl.querySelectorAll('.pedal.fx')];
+function dropIndex(x) {
+  const i = cards().findIndex((c) => { const r = c.getBoundingClientRect(); return x < r.left + r.width / 2; });
+  return i < 0 ? board.pedals.length : i;
+}
+chainEl.ondragover = (e) => {
+  e.preventDefault();
+  const c = cards()[dropIndex(e.clientX)];
+  if (marker.nextSibling !== c || !marker.isConnected) chainEl.insertBefore(marker, c ?? null);
+};
+chainEl.ondragleave = (e) => { if (!chainEl.contains(e.relatedTarget)) marker.remove(); };
+chainEl.ondrop = (e) => {
+  e.preventDefault();
+  let at = dropIndex(e.clientX);
+  marker.remove();
+  const [type, val] = e.dataTransfer.getData('text/plain').split(':');
+  if (type === 'kind' && spec[val]) return add(val, at);
+  if (type === 'id') {
+    const from = board.pedals.findIndex((p) => p.id === +val);
+    if (from < 0) return;
+    const [pd] = board.pedals.splice(from, 1);
+    if (from < at) at--;
+    board.pedals.splice(at, 0, pd);
+    render(); send();
+  }
+};
+
+function renderPalette() {
+  $('#palette').replaceChildren(...catalog.map((s) => {
+    const c = h('button', { class: 'chip', draggable: 'true', style: `--c:${s.color}`, title: s.blurb, onclick: () => add(s.kind) }, h('i'), s.name);
+    c.ondragstart = (e) => e.dataTransfer.setData('text/plain', `kind:${s.kind}`);
+    return c;
+  }));
+}
+
+// ---------- presets ----------
+const keyOf = (p) => (p.user ? 'u:' : 'f:') + p.name;
+async function loadPresets() {
+  presets = await invoke('presets');
+  const opt = (p) => h('option', { value: keyOf(p) }, p.name);
+  const yours = presets.filter((p) => p.user);
+  $('#preset').replaceChildren(
+    h('option', { value: '', disabled: '', hidden: '' }, 'Custom'),
+    h('optgroup', { label: 'Factory' }, presets.filter((p) => !p.user).map(opt)),
+    yours.length ? h('optgroup', { label: 'Yours' }, yours.map(opt)) : null,
+  );
+  $('#preset').value = presets.some((p) => keyOf(p) === current) ? current : '';
+}
+function renderPresetState() {
+  $('#dirty').hidden = !dirty;
+  $('#delBtn').disabled = !current.startsWith('u:');
+}
+function applyPreset(key) {
+  const p = presets.find((x) => keyOf(x) === key);
+  if (!p) return;
+  board.pedals = p.pedals.filter((x) => spec[x.kind]).map((x) => newPedal(x.kind, x.params, x.on ?? true));
+  board.bpm = p.bpm;
+  current = key; dirty = false;
+  renderTempo(); render(); renderPresetState(); send(false);
+}
+$('#preset').onchange = () => applyPreset($('#preset').value);
+$('#saveBtn').onclick = () => {
+  $('#saveName').value = current.startsWith('u:') ? current.slice(2) : '';
+  $('#saveDlg').showModal();
+};
+$('#saveDlg').onclose = async () => {
+  const name = $('#saveName').value.trim();
+  if ($('#saveDlg').returnValue !== 'ok' || !name) return;
+  try {
+    await invoke('save_preset', { preset: { name, bpm: board.bpm, pedals: board.pedals.map(({ kind, on, params }) => ({ kind, on, params })) } });
+    current = `u:${name}`; dirty = false;
+    await loadPresets(); renderPresetState(); persist();
+  } catch (e) { setStatus(`save failed: ${e}`, 'err'); }
+};
+let armed = null; // two-click delete instead of a confirm() popup
+$('#delBtn').onclick = async () => {
+  if (!armed) {
+    $('#delBtn').textContent = 'Sure?';
+    armed = setTimeout(() => { armed = null; $('#delBtn').textContent = 'Delete'; }, 3000);
+    return;
+  }
+  clearTimeout(armed); armed = null; $('#delBtn').textContent = 'Delete';
+  await invoke('delete_preset', { name: current.slice(2) });
+  current = ''; dirty = true;
+  await loadPresets(); renderPresetState(); persist();
+};
+
+// ---------- tempo ----------
+function renderTempo() {
+  $('#bpm').value = Math.round(board.bpm);
+  $('#beat').style.animationDuration = `${60 / board.bpm}s`;
+}
+$('#bpm').onchange = () => { board.bpm = clamp(+$('#bpm').value || 120, 40, 300); renderTempo(); send(); };
+let taps = [];
+$('#tap').onclick = () => {
+  const now = performance.now();
+  taps = [...taps.filter((t) => now - t < 2500), now].slice(-6);
+  if (taps.length < 2) return;
+  board.bpm = Math.round(clamp(60000 / ((taps.at(-1) - taps[0]) / (taps.length - 1)), 40, 300));
+  renderTempo(); send();
+};
+
+// ---------- tuner mute ----------
+function renderMute() {
+  $('#muteLed').classList.toggle('on', board.mute);
+  $('#muteSw').setAttribute('aria-pressed', String(board.mute));
+}
+$('#muteSw').onclick = () => { board.mute = !board.mute; renderMute(); send(false); };
+
+// ---------- devices ----------
+const prefs = JSON.parse(localStorage.getItem('io') || '{}');
+for (const id of ['ch', 'aux']) for (let i = 0; i < 8; i++) $('#' + id).add(new Option(String(i + 1), i));
+$('#ch').value = prefs.ch ?? 1; // Scarlett-style interfaces: instrument jack is input 2
+if (prefs.buf) $('#buf').value = prefs.buf;
+function fill(sel, names, want, def) {
+  const keep = sel.value || want;
+  sel.replaceChildren(...names.map((n) => new Option(n, n)));
+  sel.value = names.includes(keep) ? keep : def;
+}
+async function scan() {
+  const [ins, din, outs, dout] = await invoke('devices');
+  fill($('#in'), ins, prefs.in, din);
+  fill($('#out'), outs, prefs.out, dout);
+}
+function setStatus(text, cls = '') { const st = $('#status'); st.textContent = text; st.className = `status ${cls}`; }
+async function connect() {
+  Object.assign(prefs, { in: $('#in').value, ch: $('#ch').value, out: $('#out').value, buf: $('#buf').value });
+  localStorage.setItem('io', JSON.stringify(prefs));
+  setStatus('connecting…');
+  try {
+    setStatus(await invoke('connect', { input: $('#in').value, ch: +$('#ch').value, out: $('#out').value, buf: +$('#buf').value }), 'ok');
+  } catch (e) { setStatus(String(e), 'err'); }
+}
+$('#in').onchange = $('#ch').onchange = $('#out').onchange = $('#buf').onchange = connect;
+$('#aux').onchange = () => { board.aux_ch = +$('#aux').value; send(false); };
 $('#rescan').onclick = async () => { await scan(); connect(); };
 
-// ---------- tuner + meter ----------
+// ---------- polling: tuner, meter, loopers ----------
 const centsEl = $('#cents'), meterEl = $('#meter');
-for (let i = 0; i < 21; i++) centsEl.append(document.createElement('span'));
-for (let i = 0; i < 24; i++) meterEl.append(document.createElement('span'));
+for (let i = 0; i < 21; i++) centsEl.append(h('span'));
+for (let i = 0; i < 24; i++) meterEl.append(h('span'));
 const segs = [...centsEl.children], msegs = [...meterEl.children];
+const LOOP = { Empty: ['EMPTY', ''], Rec: ['● REC', 'on'], Play: ['▶ PLAY', 'on green'], Dub: ['+ DUB', 'on amber'], Stop: ['■ STOP', ''] };
 
 let meter = 0, cents = 0, miss = 0;
 async function tick() {
   try {
     const p = await invoke('poll');
-    // meter: -60..0 dB over 24 segments
     meter = Math.max(p.peak, meter * 0.88);
     const d = 20 * Math.log10(Math.max(meter, 1e-6));
     const lit = Math.round(((d + 60) / 60) * 24);
-    msegs.forEach((s, i) => {
-      s.className = i < lit ? 'on' + (i >= 22 ? ' clip' : i >= 17 ? ' hot' : '') : '';
-    });
+    msegs.forEach((s, i) => { s.className = i < lit ? 'on' + (i >= 22 ? ' clip' : i >= 17 ? ' hot' : '') : ''; });
     $('#db').textContent = d < -59 ? '−∞ dB' : `${d.toFixed(0)} dB`;
 
     const lcd = $('#lcd');
     if (p.note) {
       miss = 0;
       const [, letter, acc, oct] = p.note.match(/^([A-G])(#?)(-?\d+)$/);
-      $('#letter').textContent = letter;
-      $('#acc').textContent = acc ? '♯' : '';
-      $('#oct').textContent = oct;
-      cents += (p.cents - cents) * 0.35; // smooth the needle
+      $('#letter').textContent = letter; $('#acc').textContent = acc ? '♯' : ''; $('#oct').textContent = oct;
+      cents += (p.cents - cents) * 0.35;
       $('#hz').textContent = `${p.freq.toFixed(1)} Hz`;
-      const idx = Math.max(0, Math.min(20, Math.round(cents / 5) + 10));
-      segs.forEach((s, i) => s.className = i === idx ? 'on' + (i === 10 ? ' mid' : '') : '');
+      const idx = clamp(Math.round(cents / 5) + 10, 0, 20);
+      segs.forEach((s, i) => { s.className = i === idx ? 'on' + (i === 10 ? ' mid' : '') : ''; });
       lcd.className = 'lcd' + (Math.abs(cents) < 3 ? ' intune' : '');
-    } else if (++miss > 12) { // hold the last note briefly so decays don't flicker
+    } else if (++miss > 12) {
       lcd.className = 'lcd idle';
       $('#letter').textContent = '–'; $('#acc').textContent = ''; $('#oct').textContent = '';
       $('#hz').textContent = '— Hz';
-      segs.forEach((s) => s.className = '');
+      segs.forEach((s) => { s.className = ''; });
+    }
+
+    for (const [id, status] of p.loops) {
+      const card = chainEl.querySelector(`[data-id="${id}"]`);
+      if (!card) continue;
+      const [st, secs, prog] = status.split('|');
+      $('.st', card).textContent = LOOP[st][0];
+      $('.secs', card).textContent = `${secs} s`;
+      $('.prog i', card).style.width = `${prog * 100}%`;
+      $('.led', card).className = `led ${LOOP[st][1]}`;
     }
   } catch (e) { /* app shutting down */ }
   setTimeout(tick, 40);
 }
 
+// ---------- boot ----------
 (async () => {
-  [knobs, defaults] = await invoke('get_knobs');
-  document.querySelectorAll('.knob').forEach(makeKnob);
-  renders.forEach((r) => r());
-  renderSwitches();
-  await scan();
-  await connect();
+  catalog = await invoke('catalog');
+  catalog.forEach((s) => { spec[s.kind] = s; });
+  board = await invoke('get_board');
+  const saved = JSON.parse(localStorage.getItem('board') || 'null'); // restore last session's board
+  if (saved?.pedals) board = { ...board, ...saved, mute: false };
+  board.pedals = board.pedals.filter((p) => spec[p.kind]);
+  nextId = Math.max(0, ...board.pedals.map((p) => p.id)) + 1;
+  current = localStorage.getItem('preset') ?? 'f:Pop-Punk Power';
+  dirty = localStorage.getItem('dirty') === '1';
+  $('#aux').value = board.aux_ch ?? 0;
+
+  renderPalette(); render(); renderMute(); renderTempo();
+  await loadPresets(); renderPresetState();
+  await invoke('set_board', { board });
+  await scan(); await connect();
   tick();
 })();
 </script>
