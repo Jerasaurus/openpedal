@@ -2,21 +2,17 @@
 
 # OpenPedal
 
-A modular desktop pedalboard for guitar (Rust + Tauri). Plug into any audio interface, build a chain from 15 pedals, reorder it by dragging, and route sidechains between them.
+A modular desktop pedalboard for guitar (Rust + Tauri). Plug into any audio interface, build a chain from 14 pedals, and reorder it by dragging.
 
 ![screenshot](docs/screenshot.png)
 
 ## Pedals
 
-Noise Gate · Compressor · Overdrive · Hi-Gain · Fuzz · Cab Sim · EQ · Chorus · Phaser · Tremolo · Delay · Reverb · Sidechain · Boost · Looper, plus a tuner (stomp it to mute while tuning) at the head of the chain.
+Noise Gate · Compressor · Overdrive · Hi-Gain · Fuzz · Cab Sim · EQ · Chorus · Phaser · Tremolo · Delay · Reverb · Boost · Looper, plus a tuner (stomp it to mute while tuning) at the head of the chain.
 
 - **Chain:** click or drag pedals in from the bottom palette; drag a pedal's name to reorder, ◀ ▶ ✕ on hover. Delay tails and loops keep going while you rearrange.
-- **Sidechain:** Gate, Compressor, Delay, Reverb and Sidechain pedals have a **key** selector:
-  - *Self* — the signal at that point in the chain
-  - *Guitar* — your dry input (ducked delay/reverb: echoes get out of the way while you play)
-  - *Aux in* — another input channel (pick it in the top bar), e.g. a mic or drum machine on input 1
-  - *Tempo* — a kick-style pump at the BPM (tap tempo in the top bar)
-- **Presets:** 11 factory presets (Pop-Punk Power, Metal Tight, Blues Crunch, Fuzz Wall, 80s Lead, Ducked Delay Lead, Ambient Swells, Sidechain Pump, Funk Clean, Surf Spring, Looper Practice). Save your own; they live in `~/Library/Application Support/io.github.jerasaurus.openpedal/presets.json`. Factory presets are plain JSON in [`presets.json`](presets.json).
+- **Ducking:** Delay and Reverb have a *duck* knob: the effect backs off while you play and blooms when you stop.
+- **Presets:** 10 factory presets (Pop-Punk Power, Metal Tight, Blues Crunch, Fuzz Wall, 80s Lead, Ducked Delay Lead, Ambient Swells, Funk Clean, Surf Spring, Looper Practice). Save your own; they live in `~/Library/Application Support/io.github.jerasaurus.openpedal/presets.json`. Factory presets are plain JSON in [`presets.json`](presets.json).
 - **Knobs:** drag up/down, scroll, or arrow keys. Shift = fine. Double-click = default.
 
 ## Run

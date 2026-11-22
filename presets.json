@@ -1,112 +1,372 @@
 [
   {
     "name": "Pop-Punk Power",
-    "bpm": 190,
     "pedals": [
-      { "kind": "gate", "params": { "thresh": -50 } },
-      { "kind": "distortion", "params": { "gain": 1.0, "bass": 4, "mid": -5, "treble": 4, "level": 0.5 } },
-      { "kind": "cab", "params": { "bright": 0.5, "thump": 3 } },
-      { "kind": "reverb", "params": { "size": 0.25, "damp": 0.5, "mix": 0.12 } }
+      {
+        "kind": "gate",
+        "params": {
+          "thresh": -50
+        }
+      },
+      {
+        "kind": "distortion",
+        "params": {
+          "gain": 1.0,
+          "bass": 4,
+          "mid": -5,
+          "treble": 4,
+          "level": 0.5
+        }
+      },
+      {
+        "kind": "cab",
+        "params": {
+          "bright": 0.5,
+          "thump": 3
+        }
+      },
+      {
+        "kind": "reverb",
+        "params": {
+          "size": 0.25,
+          "damp": 0.5,
+          "mix": 0.12
+        }
+      }
     ]
   },
   {
     "name": "Metal Tight",
-    "bpm": 140,
     "pedals": [
-      { "kind": "gate", "params": { "thresh": -46, "release": 40 } },
-      { "kind": "overdrive", "params": { "drive": 0.0, "tone": 0.6, "level": 0.6 } },
-      { "kind": "distortion", "params": { "gain": 1.6, "bass": 3, "mid": -8, "treble": 5, "level": 0.45 } },
-      { "kind": "cab", "params": { "bright": 0.45, "thump": 5 } }
+      {
+        "kind": "gate",
+        "params": {
+          "thresh": -46,
+          "release": 40
+        }
+      },
+      {
+        "kind": "overdrive",
+        "params": {
+          "drive": 0.0,
+          "tone": 0.6,
+          "level": 0.6
+        }
+      },
+      {
+        "kind": "distortion",
+        "params": {
+          "gain": 1.6,
+          "bass": 3,
+          "mid": -8,
+          "treble": 5,
+          "level": 0.45
+        }
+      },
+      {
+        "kind": "cab",
+        "params": {
+          "bright": 0.45,
+          "thump": 5
+        }
+      }
     ]
   },
   {
     "name": "Blues Crunch",
-    "bpm": 90,
     "pedals": [
-      { "kind": "comp", "params": { "thresh": -24, "ratio": 3, "attack": 10, "release": 150, "makeup": 4 } },
-      { "kind": "overdrive", "params": { "drive": 0.55, "tone": 0.55, "level": 0.6 } },
-      { "kind": "cab", "params": { "bright": 0.6, "thump": 2 } },
-      { "kind": "reverb", "params": { "size": 0.45, "damp": 0.4, "mix": 0.2 } }
+      {
+        "kind": "comp",
+        "params": {
+          "thresh": -24,
+          "ratio": 3,
+          "attack": 10,
+          "release": 150,
+          "makeup": 4
+        }
+      },
+      {
+        "kind": "overdrive",
+        "params": {
+          "drive": 0.55,
+          "tone": 0.55,
+          "level": 0.6
+        }
+      },
+      {
+        "kind": "cab",
+        "params": {
+          "bright": 0.6,
+          "thump": 2
+        }
+      },
+      {
+        "kind": "reverb",
+        "params": {
+          "size": 0.45,
+          "damp": 0.4,
+          "mix": 0.2
+        }
+      }
     ]
   },
   {
     "name": "Fuzz Wall",
-    "bpm": 80,
     "pedals": [
-      { "kind": "gate", "params": { "thresh": -45 } },
-      { "kind": "fuzz", "params": { "fuzz": 0.85, "tone": 0.4, "level": 0.5 } },
-      { "kind": "eq", "params": { "low": 3, "mid": -4, "freq": 700, "high": 0 } },
-      { "kind": "cab", "params": { "bright": 0.4, "thump": 4 } }
+      {
+        "kind": "gate",
+        "params": {
+          "thresh": -45
+        }
+      },
+      {
+        "kind": "fuzz",
+        "params": {
+          "fuzz": 0.85,
+          "tone": 0.4,
+          "level": 0.5
+        }
+      },
+      {
+        "kind": "eq",
+        "params": {
+          "low": 3,
+          "mid": -4,
+          "freq": 700,
+          "high": 0
+        }
+      },
+      {
+        "kind": "cab",
+        "params": {
+          "bright": 0.4,
+          "thump": 4
+        }
+      }
     ]
   },
   {
     "name": "80s Lead",
-    "bpm": 120,
     "pedals": [
-      { "kind": "distortion", "params": { "gain": 0.6, "bass": 2, "mid": 2, "treble": 3, "level": 0.5 } },
-      { "kind": "cab", "params": { "bright": 0.65, "thump": 2 } },
-      { "kind": "chorus", "params": { "rate": 0.9, "depth": 0.5, "mix": 0.4 } },
-      { "kind": "delay", "params": { "time": 400, "repeats": 0.4, "mix": 0.3, "tone": 0.5, "duck": 0.6, "key": 1 } },
-      { "kind": "reverb", "params": { "size": 0.55, "mix": 0.2 } }
+      {
+        "kind": "distortion",
+        "params": {
+          "gain": 0.6,
+          "bass": 2,
+          "mid": 2,
+          "treble": 3,
+          "level": 0.5
+        }
+      },
+      {
+        "kind": "cab",
+        "params": {
+          "bright": 0.65,
+          "thump": 2
+        }
+      },
+      {
+        "kind": "chorus",
+        "params": {
+          "rate": 0.9,
+          "depth": 0.5,
+          "mix": 0.4
+        }
+      },
+      {
+        "kind": "delay",
+        "params": {
+          "time": 400,
+          "repeats": 0.4,
+          "mix": 0.3,
+          "tone": 0.5,
+          "duck": 0.6
+        }
+      },
+      {
+        "kind": "reverb",
+        "params": {
+          "size": 0.55,
+          "mix": 0.2
+        }
+      }
     ]
   },
   {
     "name": "Ducked Delay Lead",
-    "bpm": 120,
     "pedals": [
-      { "kind": "overdrive", "params": { "drive": 0.6, "tone": 0.6, "level": 0.55 } },
-      { "kind": "cab", "params": { "bright": 0.6, "thump": 2 } },
-      { "kind": "delay", "params": { "time": 450, "repeats": 0.45, "mix": 0.55, "tone": 0.45, "duck": 0.85, "key": 1 } },
-      { "kind": "reverb", "params": { "size": 0.5, "mix": 0.2, "duck": 0.6, "key": 1 } }
+      {
+        "kind": "overdrive",
+        "params": {
+          "drive": 0.6,
+          "tone": 0.6,
+          "level": 0.55
+        }
+      },
+      {
+        "kind": "cab",
+        "params": {
+          "bright": 0.6,
+          "thump": 2
+        }
+      },
+      {
+        "kind": "delay",
+        "params": {
+          "time": 450,
+          "repeats": 0.45,
+          "mix": 0.55,
+          "tone": 0.45,
+          "duck": 0.85
+        }
+      },
+      {
+        "kind": "reverb",
+        "params": {
+          "size": 0.5,
+          "mix": 0.2,
+          "duck": 0.6
+        }
+      }
     ]
   },
   {
     "name": "Ambient Swells",
-    "bpm": 70,
     "pedals": [
-      { "kind": "comp", "params": { "thresh": -30, "ratio": 4, "attack": 15, "release": 300, "makeup": 8 } },
-      { "kind": "chorus", "params": { "rate": 0.4, "depth": 0.4, "mix": 0.35 } },
-      { "kind": "delay", "params": { "time": 520, "repeats": 0.55, "mix": 0.45, "tone": 0.4, "duck": 0.5, "key": 1 } },
-      { "kind": "reverb", "params": { "size": 0.92, "damp": 0.3, "mix": 0.5 } }
-    ]
-  },
-  {
-    "name": "Sidechain Pump",
-    "bpm": 124,
-    "pedals": [
-      { "kind": "overdrive", "params": { "drive": 0.3, "tone": 0.6, "level": 0.5 } },
-      { "kind": "chorus", "params": { "rate": 0.6, "depth": 0.4, "mix": 0.35 } },
-      { "kind": "reverb", "params": { "size": 0.7, "damp": 0.3, "mix": 0.4 } },
-      { "kind": "ducker", "params": { "amount": 0.85, "sens": 12, "attack": 1, "release": 220, "key": 3 } }
+      {
+        "kind": "comp",
+        "params": {
+          "thresh": -30,
+          "ratio": 4,
+          "attack": 15,
+          "release": 300,
+          "makeup": 8
+        }
+      },
+      {
+        "kind": "chorus",
+        "params": {
+          "rate": 0.4,
+          "depth": 0.4,
+          "mix": 0.35
+        }
+      },
+      {
+        "kind": "delay",
+        "params": {
+          "time": 520,
+          "repeats": 0.55,
+          "mix": 0.45,
+          "tone": 0.4,
+          "duck": 0.5
+        }
+      },
+      {
+        "kind": "reverb",
+        "params": {
+          "size": 0.92,
+          "damp": 0.3,
+          "mix": 0.5
+        }
+      }
     ]
   },
   {
     "name": "Funk Clean",
-    "bpm": 105,
     "pedals": [
-      { "kind": "comp", "params": { "thresh": -30, "ratio": 8, "attack": 2, "release": 80, "makeup": 10 } },
-      { "kind": "phaser", "params": { "rate": 0.35, "depth": 0.7, "feedback": 0.4, "mix": 0.5 } },
-      { "kind": "reverb", "params": { "size": 0.3, "mix": 0.12 } }
+      {
+        "kind": "comp",
+        "params": {
+          "thresh": -30,
+          "ratio": 8,
+          "attack": 2,
+          "release": 80,
+          "makeup": 10
+        }
+      },
+      {
+        "kind": "phaser",
+        "params": {
+          "rate": 0.35,
+          "depth": 0.7,
+          "feedback": 0.4,
+          "mix": 0.5
+        }
+      },
+      {
+        "kind": "reverb",
+        "params": {
+          "size": 0.3,
+          "mix": 0.12
+        }
+      }
     ]
   },
   {
     "name": "Surf Spring",
-    "bpm": 160,
     "pedals": [
-      { "kind": "boost", "params": { "gain": 4 } },
-      { "kind": "tremolo", "params": { "rate": 6, "depth": 0.5, "shape": 0.2 } },
-      { "kind": "reverb", "params": { "size": 0.6, "damp": 0.15, "mix": 0.45 } }
+      {
+        "kind": "boost",
+        "params": {
+          "gain": 4
+        }
+      },
+      {
+        "kind": "tremolo",
+        "params": {
+          "rate": 6,
+          "depth": 0.5,
+          "shape": 0.2
+        }
+      },
+      {
+        "kind": "reverb",
+        "params": {
+          "size": 0.6,
+          "damp": 0.15,
+          "mix": 0.45
+        }
+      }
     ]
   },
   {
     "name": "Looper Practice",
-    "bpm": 100,
     "pedals": [
-      { "kind": "comp", "params": { "thresh": -24, "ratio": 3, "makeup": 4 } },
-      { "kind": "overdrive", "params": { "drive": 0.4, "tone": 0.5, "level": 0.5 } },
-      { "kind": "cab", "params": { "bright": 0.55 } },
-      { "kind": "looper", "params": { "level": 0.9 } },
-      { "kind": "reverb", "params": { "size": 0.35, "mix": 0.15 } }
+      {
+        "kind": "comp",
+        "params": {
+          "thresh": -24,
+          "ratio": 3,
+          "makeup": 4
+        }
+      },
+      {
+        "kind": "overdrive",
+        "params": {
+          "drive": 0.4,
+          "tone": 0.5,
+          "level": 0.5
+        }
+      },
+      {
+        "kind": "cab",
+        "params": {
+          "bright": 0.55
+        }
+      },
+      {
+        "kind": "looper",
+        "params": {
+          "level": 0.9
+        }
+      },
+      {
+        "kind": "reverb",
+        "params": {
+          "size": 0.35,
+          "mix": 0.15
+        }
+      }
     ]
   }
 ]

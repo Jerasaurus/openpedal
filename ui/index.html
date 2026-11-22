@@ -48,9 +48,6 @@
   header button:disabled { opacity: .35; cursor: default; }
   #preset { min-width: 190px; font-weight: 600; }
   #dirty { color: var(--amber); font-size: 11px; letter-spacing: .05em; }
-  #bpm { width: 58px; text-align: center; font-family: var(--mono); }
-  #beat { width: 9px; height: 9px; border-radius: 50%; background: var(--pink); animation: beat .5s infinite; }
-  @keyframes beat { 0% { opacity: 1; box-shadow: 0 0 8px var(--pink); } 25%, 100% { opacity: .15; box-shadow: none; } }
   .io select { max-width: 190px; }
   .status { font-family: var(--mono); font-size: 12px; display: flex; align-items: center; gap: 7px; color: var(--dim); }
   .status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #555; }
@@ -125,11 +122,6 @@
   .knob label { font-family: var(--display); font-weight: 800; font-size: 9px; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }
   .knob output { font-family: var(--mono); font-size: 9.5px; padding: 1px 4px; border-radius: 4px; background: rgba(0,0,0,.3); color: #fff; min-width: 50px; text-align: center; opacity: .6; transition: opacity .15s; white-space: nowrap; }
   .knob:hover output, .knob.active output, .knob:focus-visible output { opacity: 1; }
-
-  /* sidechain key selector */
-  .sc { margin-top: 10px; display: flex; align-items: center; gap: 6px; font-family: var(--display); font-weight: 800; font-size: 9px; letter-spacing: .14em; text-transform: uppercase; }
-  .sc select { font: 600 11px -apple-system, sans-serif; color: #fff; background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.15); border-radius: 6px; padding: 3px 6px; }
-  .pedal.keyed .sc select { border-color: var(--lcd); box-shadow: 0 0 8px rgba(184,255,92,.35); }
 
   /* looper */
   .loop { width: 100%; margin-top: 10px; }
@@ -212,16 +204,10 @@
     <span id="dirty" hidden>● edited</span>
     <button id="saveBtn">Save…</button>
     <button id="delBtn" disabled>Delete</button>
-    <div class="spacer"></div>
-    <span class="lbl">BPM</span>
-    <input id="bpm" type="number" min="40" max="300" aria-label="Tempo in BPM">
-    <button id="tap" title="Tap tempo">Tap</button>
-    <div id="beat" aria-hidden="true"></div>
   </div>
   <div class="row io">
     <label class="lbl">In <select id="in" aria-label="Input device"></select></label>
     <label class="lbl">Ch <select id="ch" aria-label="Guitar input channel"></select></label>
-    <label class="lbl" title="Input channel used when a pedal's key is set to Aux in">Sidechain ch <select id="aux" aria-label="Sidechain aux input channel"></select></label>
     <label class="lbl">Out <select id="out" aria-label="Output device"></select></label>
     <button id="rescan" title="Rescan devices" aria-label="Rescan devices">↻</button>
     <label class="lbl">Buffer
@@ -365,19 +351,11 @@ function makeKnob(q, pd) {
 const act = (id, action) => invoke('pedal_action', { id, action });
 function makePedal(pd) {
   const s = spec[pd.kind];
-  const knobs = s.params.filter((q) => !q.choices), choices = s.params.filter((q) => q.choices);
+  const knobs = s.params;
   const el = h('section', { class: 'pedal fx', 'data-id': pd.id, style: `--c:${s.color}`, 'aria-label': s.name });
   el.classList.toggle('light', isLight(s.color));
   el.classList.toggle('off', !pd.on);
   const cols = knobs.length === 1 ? 1 : knobs.length === 2 || knobs.length === 4 ? 2 : 3;
-
-  const sc = choices.map((q) => {
-    const sel = h('select', { 'aria-label': `${s.name} sidechain key` }, q.choices.map((c, j) => h('option', { value: j }, c)));
-    sel.value = Math.round(pd.params[q.name] ?? q.def);
-    el.classList.toggle('keyed', +sel.value > 0);
-    sel.onchange = () => { pd.params[q.name] = +sel.value; el.classList.toggle('keyed', +sel.value > 0); send(); };
-    return h('label', { class: 'sc', title: 'Sidechain: what drives this pedal' }, '⇠ key', sel);
-  });
 
   const loop = pd.kind === 'looper' && h('div', { class: 'loop' },
     h('div', { class: 'loop-lcd' }, h('b', { class: 'st' }, 'EMPTY'), h('span', { class: 'secs' }, '0.0 s'), h('div', { class: 'prog' }, h('i'))),
@@ -402,7 +380,7 @@ function makePedal(pd) {
       h('button', { title: 'Move right', 'aria-label': `Move ${s.name} right`, onclick: () => move(pd.id, 1) }, '▶'),
       h('button', { title: 'Remove', 'aria-label': `Remove ${s.name}`, onclick: () => remove(pd.id) }, '✕')),
     h('div', { class: 'knobs', style: `grid-template-columns:repeat(${cols},1fr)` }, knobs.map((q) => makeKnob(q, pd))),
-    ...sc, loop, led, foot, name,
+    loop, led, foot, name,
   ].filter(Boolean));
   return el;
 }
@@ -471,9 +449,8 @@ function applyPreset(key) {
   const p = presets.find((x) => keyOf(x) === key);
   if (!p) return;
   board.pedals = p.pedals.filter((x) => spec[x.kind]).map((x) => newPedal(x.kind, x.params, x.on ?? true));
-  board.bpm = p.bpm;
   current = key; dirty = false;
-  renderTempo(); render(); renderPresetState(); send(false);
+  render(); renderPresetState(); send(false);
 }
 $('#preset').onchange = () => applyPreset($('#preset').value);
 $('#saveBtn').onclick = () => {
@@ -484,7 +461,7 @@ $('#saveDlg').onclose = async () => {
   const name = $('#saveName').value.trim();
   if ($('#saveDlg').returnValue !== 'ok' || !name) return;
   try {
-    await invoke('save_preset', { preset: { name, bpm: board.bpm, pedals: board.pedals.map(({ kind, on, params }) => ({ kind, on, params })) } });
+    await invoke('save_preset', { preset: { name, pedals: board.pedals.map(({ kind, on, params }) => ({ kind, on, params })) } });
     current = `u:${name}`; dirty = false;
     await loadPresets(); renderPresetState(); persist();
   } catch (e) { setStatus(`save failed: ${e}`, 'err'); }
@@ -502,21 +479,6 @@ $('#delBtn').onclick = async () => {
   await loadPresets(); renderPresetState(); persist();
 };
 
-// ---------- tempo ----------
-function renderTempo() {
-  $('#bpm').value = Math.round(board.bpm);
-  $('#beat').style.animationDuration = `${60 / board.bpm}s`;
-}
-$('#bpm').onchange = () => { board.bpm = clamp(+$('#bpm').value || 120, 40, 300); renderTempo(); send(); };
-let taps = [];
-$('#tap').onclick = () => {
-  const now = performance.now();
-  taps = [...taps.filter((t) => now - t < 2500), now].slice(-6);
-  if (taps.length < 2) return;
-  board.bpm = Math.round(clamp(60000 / ((taps.at(-1) - taps[0]) / (taps.length - 1)), 40, 300));
-  renderTempo(); send();
-};
-
 // ---------- tuner mute ----------
 function renderMute() {
   $('#muteLed').classList.toggle('on', board.mute);
@@ -526,7 +488,7 @@ $('#muteSw').onclick = () => { board.mute = !board.mute; renderMute(); send(fals
 
 // ---------- devices ----------
 const prefs = JSON.parse(localStorage.getItem('io') || '{}');
-for (const id of ['ch', 'aux']) for (let i = 0; i < 8; i++) $('#' + id).add(new Option(String(i + 1), i));
+for (let i = 0; i < 8; i++) $('#ch').add(new Option(String(i + 1), i));
 $('#ch').value = prefs.ch ?? 1; // Scarlett-style interfaces: instrument jack is input 2
 if (prefs.buf) $('#buf').value = prefs.buf;
 function fill(sel, names, want, def) {
@@ -549,7 +511,6 @@ async function connect() {
   } catch (e) { setStatus(String(e), 'err'); }
 }
 $('#in').onchange = $('#ch').onchange = $('#out').onchange = $('#buf').onchange = connect;
-$('#aux').onchange = () => { board.aux_ch = +$('#aux').value; send(false); };
 $('#rescan').onclick = async () => { await scan(); connect(); };
 
 // ---------- polling: tuner, meter, loopers ----------
@@ -610,9 +571,8 @@ async function tick() {
   nextId = Math.max(0, ...board.pedals.map((p) => p.id)) + 1;
   current = localStorage.getItem('preset') ?? 'f:Pop-Punk Power';
   dirty = localStorage.getItem('dirty') === '1';
-  $('#aux').value = board.aux_ch ?? 0;
 
-  renderPalette(); render(); renderMute(); renderTempo();
+  renderPalette(); render(); renderMute();
   await loadPresets(); renderPresetState();
   await invoke('set_board', { board });
   await scan(); await connect();
